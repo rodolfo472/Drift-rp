@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Drift City Online</title>
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f0f0f;
+  color: white;
+  text-align: center;
+}
+button {
+  padding: 15px 30px;
+  font-size: 18px;
+  margin: 10px;
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+}
+#menu, #game {
+  display: none;
+}
+.menu-btn {
+  background: #ff0033;
+  color: white;
+}
+.panel {
+  margin-top: 30px;
+  background: #1c1c1c;
+  padding: 20px;
+  border-radius: 10px;
+  display: inline-block;
+}
+</style>
+</head>
+
+<body>
+
+<!-- MENU INICIAL -->
+<div id="menu">
+  <h1>🚗 Drift City Online</h1>
+  <button class="menu-btn" onclick="startGame()">▶ JOGAR</button>
+</div>
+
+<!-- JOGO -->
+<div id="game">
+  <h2 id="playerName"></h2>
+  <p>💰 Dinheiro: R$ <span id="money"></span></p>
+  <p>🎓 Estudos: <span id="studies"></span></p>
+
+  <div class="panel">
+    <button onclick="study()">🏫 Estudar</button>
+    <button onclick="buyLockpick()">🔓 Comprar Lockpick</button>
+  </div>
+</div>
+
+<script>
+let player = {
+  name: "Rodolfo",
+  id: Math.floor(Math.random() * 100000),
+  money: 10000,
+  studies: 0
+};
+
+function startGame() {
+  document.getElementById("menu").style.display = "none";
+  document.getElementById("game").style.display = "block";
+
+  document.getElementById("playerName").innerText =
+    player.name + " | ID: " + player.id;
+
+  updateUI();
+}
+
+function updateUI() {
+  document.getElementById("money").innerText = player.money;
+  document.getElementById("studies").innerText = player.studies;
+}
+
+function study() {
+  player.studies += 50;
+  alert("+50 estudos");
+  updateUI();
+}
+
+function buyLockpick() {
+  if (player.money >= 15000000) {
+    player.money -= 15000000;
+    alert("Lockpick comprado!");
+  } else {
+    alert("Dinheiro insuficiente");
+  }
+  updateUI();
+}
+
+document.getElementById("menu").style.display = "block";
+</script>
+
+</body>
+</html>
