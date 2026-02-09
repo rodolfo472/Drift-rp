@@ -2,100 +2,141 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Drift City Online</title>
+<title>CityRP Drift</title>
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: #0f0f0f;
-  color: white;
-  text-align: center;
+body { margin:0; overflow:hidden; background:black; }
+#ui {
+  position:fixed;
+  top:10px;
+  left:10px;
+  color:white;
+  font-family:Arial;
+  z-index:10;
 }
 button {
-  padding: 15px 30px;
-  font-size: 18px;
-  margin: 10px;
-  cursor: pointer;
-  border: none;
-  border-radius: 8px;
-}
-#menu, #game {
-  display: none;
-}
-.menu-btn {
-  background: #ff0033;
-  color: white;
-}
-.panel {
-  margin-top: 30px;
-  background: #1c1c1c;
-  padding: 20px;
-  border-radius: 10px;
-  display: inline-block;
+  padding:8px;
+  margin:4px;
+  cursor:pointer;
 }
 </style>
 </head>
-
 <body>
 
-<!-- MENU INICIAL -->
-<div id="menu">
-  <h1>🚗 Drift City Online</h1>
-  <button class="menu-btn" onclick="startGame()">▶ JOGAR</button>
+<div id="ui">
+  <div>💰 Dinheiro: <span id="money"></span></div>
+  <button onclick="enterCar()">Entrar no carro</button>
+  <button onclick="exitCar()">Sair do carro</button>
 </div>
 
-<!-- JOGO -->
-<div id="game">
-  <h2 id="playerName"></h2>
-  <p>💰 Dinheiro: R$ <span id="money"></span></p>
-  <p>🎓 Estudos: <span id="studies"></span></p>
-
-  <div class="panel">
-    <button onclick="study()">🏫 Estudar</button>
-    <button onclick="buyLockpick()">🔓 Comprar Lockpick</button>
-  </div>
-</div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.155/build/three.min.js"></script>
 
 <script>
-let player = {
-  name: "Rodolfo",
-  id: Math.floor(Math.random() * 100000),
-  money: 10000,
-  studies: 0
-};
+/* =====================
+   DINHEIRO
+===================== */
+let money = Number(localStorage.getItem("money")) || 5000000;
+document.getElementById("money").innerText = money.toLocaleString("pt-BR");
 
-function startGame() {
-  document.getElementById("menu").style.display = "none";
-  document.getElementById("game").style.display = "block";
+/* =====================
+   THREE.JS
+===================== */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
 
-  document.getElementById("playerName").innerText =
-    player.name + " | ID: " + player.id;
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 
-  updateUI();
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+/* LUZ */
+const sun = new THREE.DirectionalLight(0xffffff, 1);
+sun.position.set(10,20,10);
+scene.add(sun);
+scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+
+/* =====================
+   MAPA DE DRIFT
+===================== */
+
+/* CHÃO */
+const ground = new THREE.Mesh(
+  new THREE.CircleGeometry(200, 64),
+  new THREE.MeshStandardMaterial({ color:0x2b2b2b })
+);
+ground.rotation.x = -Math.PI/2;
+scene.add(ground);
+
+/* PAREDE DA PISTA */
+function createWall(radius) {
+  const wallGeo = new THREE.TorusGeometry(radius, 1.5, 16, 100);
+  const wallMat = new THREE.MeshStandardMaterial({ color:0xffcc00 });
+  const wall = new THREE.Mesh(wallGeo, wallMat);
+  wall.rotation.x = Math.PI/2;
+  scene.add(wall);
 }
+createWall(80);
+createWall(120);
 
-function updateUI() {
-  document.getElementById("money").innerText = player.money;
-  document.getElementById("studies").innerText = player.studies;
-}
+/* =====================
+   CARRO (DRIFT)
+===================== */
+const car = new THREE.Mesh(
+  new THREE.BoxGeometry(4,1.2,2),
+  new THREE.MeshStandardMaterial({ color:0xff0000 })
+);
+car.position.set(0,0.6,90);
+scene.add(car);
 
-function study() {
-  player.studies += 50;
-  alert("+50 estudos");
-  updateUI();
-}
+let inCar = false;
+let speed = 0;
+let rotationSpeed = 0;
 
-function buyLockpick() {
-  if (player.money >= 15000000) {
-    player.money -= 15000000;
-    alert("Lockpick comprado!");
-  } else {
-    alert("Dinheiro insuficiente");
+/* =====================
+   CONTROLES
+===================== */
+const keys = {};
+window.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+function enterCar() { inCar = true; }
+function exitCar() { inCar = false; }
+
+/* =====================
+   LOOP
+===================== */
+function animate() {
+  requestAnimationFrame(animate);
+
+  if (inCar) {
+    if (keys["w"]) speed += 0.01;
+    if (keys["s"]) speed -= 0.01;
+    speed *= 0.98;
+
+    if (keys["a"]) rotationSpeed += 0.002;
+    if (keys["d"]) rotationSpeed -= 0.002;
+    rotationSpeed *= 0.9;
+
+    car.rotation.y += rotationSpeed;
+    car.translateZ(-speed);
+
+    camera.position.lerp(
+      car.position.clone().add(new THREE.Vector3(0,8,15)),
+      0.1
+    );
+    camera.lookAt(car.position);
   }
-  updateUI();
-}
 
-document.getElementById("menu").style.display = "block";
+  renderer.render(scene, camera);
+}
+animate();
+
+/* RESPONSIVO */
+window.addEventListener("resize", ()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 </script>
 
 </body>
